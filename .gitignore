@@ -12,6 +12,7 @@
 /obj/
 /vendor/
 /dist/
+/logs/
 
 # Logs and temporary files
 *.log
