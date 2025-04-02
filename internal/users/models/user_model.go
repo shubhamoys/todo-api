@@ -3,6 +3,7 @@ package models
 import (
 	"time"
 
+	"github.com/shubhamoys/todo-api/internal/users/user_inputs"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -18,15 +19,15 @@ type User struct {
 }
 
 // NewUser constructor to initialize a user with default values
-func NewUser(name, email, password string) (*User, error) {
-	hashedPassword, err := HashPassword(password)
+func NewUser(input user_inputs.CreateUserInput) (*User, error) {
+	hashedPassword, err := HashPassword(input.Password)
 	if err != nil {
 		return nil, err
 	}
 
 	return &User{
-		Name:      name,
-		Email:     NewEmail(email),
+		Name:      input.Name,
+		Email:     NewEmail(input.Email),
 		Password:  NewPassword(hashedPassword),
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),

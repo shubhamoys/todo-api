@@ -2,10 +2,13 @@ package routes
 
 import (
 	"github.com/gin-gonic/gin"
-	usersController "github.com/shubhamoys/todo-api/internal/users/users_controller"
+	"github.com/shubhamoys/todo-api/internal/users/users_controller"
+	"github.com/shubhamoys/todo-api/internal/users/users_service"
 )
 
 func UserRoutes(router *gin.Engine) {
+	usersService := users_service.NewUsersService()
+	usersController := users_controller.NewUserController(usersService)
 	userGroup := router.Group("/users")
 
 	userGroup.POST("/register", usersController.Register)

@@ -12,9 +12,9 @@ type Password struct {
 // NewPassword creates an Password instance with default values
 func NewPassword(value string) Password {
 	return Password{
-		Hash:    value,
-		OTP:      "",
-		Reset: false, // Default value
+		Hash:      value,
+		OTP:       "",
+		Reset:     false, // Default value
 		UpdatedAt: time.Now(),
 	}
 }
