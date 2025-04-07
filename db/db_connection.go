@@ -54,6 +54,6 @@ func Disconnect() {
 			utils.Logger.Error("Failed to disconnect from MongoDB: ", err)
 		}
 
-		utils.Logger.Info("Disconnected from MongoDB!")
+		utils.Logger.Info("Successfully Disconnected from MongoDB!")
 	}
 }

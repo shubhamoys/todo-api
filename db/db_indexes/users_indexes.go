@@ -30,8 +30,8 @@ func EnsureUserIndexes(db *mongo.Database) {
 
 	_, err := usersCollection.Indexes().CreateMany(context.Background(), []mongo.IndexModel{uniqueEmailIndex, textIndex})
 	if err != nil {
-		utils.Logger.Error("❌ Error creating user indexes:", err)
+		utils.Logger.Error("Error creating user indexes:", err)
 	}
 
-	utils.Logger.Info("✅ User indexes created successfully")
+	utils.Logger.Info("User indexes created successfully")
 }
