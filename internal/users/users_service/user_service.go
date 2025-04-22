@@ -57,9 +57,8 @@ func (s *UsersService) GetUsers(query user_inputs.GetUsersQuery) (map[string]int
 		readQuery["email.value"] = query.EmailValue
 	}
 
-	if query.EmailVerified != "" {
-		val := strings.ToLower(query.EmailVerified) == "true"
-		readQuery["email.verified"] = val
+	if query.EmailVerified != nil {
+		readQuery["email.verified"] = *query.EmailVerified
 	}
 
 	if query.Search != "" {

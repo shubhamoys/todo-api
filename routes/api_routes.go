@@ -13,6 +13,7 @@ func UserRoutes(router *gin.Engine) {
 
 	userGroup.POST("/register", usersController.Register)
 	userGroup.POST("/login", usersController.Login)
+	userGroup.GET("/get-users", usersController.GetUsers)
 }
 
 func TodoRoutes(router *gin.Engine) {

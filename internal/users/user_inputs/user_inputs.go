@@ -5,7 +5,7 @@ type GetUsersQuery struct {
 	UserIDs       string
 	Name          string
 	EmailValue    string
-	EmailVerified string
+	EmailVerified *bool
 	Search        string
 	Sort          string
 	Limit         int64
