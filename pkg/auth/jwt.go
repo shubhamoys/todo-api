@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"errors"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -37,9 +38,9 @@ func GenerateJWT(username string) (string, error) {
 	return tokenString, nil
 }
 
+// ValidateJWT validates the JWT token and returns the claims
 func ValidateJWT(tokenString string) (*Claims, error) {
-	claims := &Claims{}
-	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		return config.AppConfig.JWTSecretKey, nil
 	})
 
@@ -47,8 +48,14 @@ func ValidateJWT(tokenString string) (*Claims, error) {
 		return nil, err
 	}
 
-	if !token.Valid {
-		return nil, err
+	claims, ok := token.Claims.(*Claims)
+	if !ok || !token.Valid {
+		return nil, errors.New("invalid token")
+	}
+
+	// Check if the token is expired
+	if claims.ExpiresAt.Time.Before(time.Now()) {
+		return nil, errors.New("token has expired")
 	}
 
 	return claims, nil

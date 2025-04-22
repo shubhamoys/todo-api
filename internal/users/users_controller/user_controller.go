@@ -43,7 +43,7 @@ func (uc *UserController) Register(c *gin.Context) {
 	if err := registerUserDTO.Validate(); err != nil {
 		utils.Logger.Warn("Validation failed :", err)
 
-		utils.ErrorResponse(c, http.StatusBadRequest, "Validation failed", err, nil)
+		utils.ErrorResponse(c, http.StatusBadRequest, "Validation failed. Incorrect email or password", err, nil)
 		return
 	}
 
@@ -92,7 +92,7 @@ func (uc *UserController) Login(c *gin.Context) {
 	if err := loginUserDTO.Validate(); err != nil {
 		utils.Logger.Warn("Validation failed :", err)
 
-		utils.ErrorResponse(c, http.StatusBadRequest, "Validation failed", err, nil)
+		utils.ErrorResponse(c, http.StatusBadRequest, "Validation failed. Incorrect email or password", err, nil)
 		return
 	}
 
@@ -145,6 +145,7 @@ func (uc *UserController) GetUsers(c *gin.Context) {
 
 	if err := c.ShouldBindQuery(&getUsersDTO); err != nil {
 		utils.Logger.Warn("Invalid query parameters:", err)
+
 		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid query parameters", err, nil)
 		return
 	}
@@ -152,6 +153,7 @@ func (uc *UserController) GetUsers(c *gin.Context) {
 	// Step 2: Validate the DTO
 	if err := getUsersDTO.Validate(); err != nil {
 		utils.Logger.Warn("Validation failed:", err)
+
 		utils.ErrorResponse(c, http.StatusBadRequest, "Validation failed", err, nil)
 		return
 	}
@@ -174,11 +176,13 @@ func (uc *UserController) GetUsers(c *gin.Context) {
 	foundUsers, statusCode, err := uc.UserService.GetUsers(getUsersQuery)
 	if err != nil {
 		utils.Logger.Error("Error occurred while fetching users:", err)
+
 		utils.ErrorResponse(c, statusCode, "Failed to fetch users", err, nil)
 		return
 	}
 
 	// Step 5: Return the response
 	utils.Logger.Info("Users fetched successfully")
+
 	utils.SuccessResponse(c, http.StatusOK, "Users fetched successfully", foundUsers)
 }

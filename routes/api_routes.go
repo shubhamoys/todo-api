@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/shubhamoys/todo-api/internal/users/users_controller"
 	"github.com/shubhamoys/todo-api/internal/users/users_service"
+	"github.com/shubhamoys/todo-api/pkg/middleware"
 )
 
 func UserRoutes(router *gin.Engine) {
@@ -13,6 +14,9 @@ func UserRoutes(router *gin.Engine) {
 
 	userGroup.POST("/register", usersController.Register)
 	userGroup.POST("/login", usersController.Login)
+
+	// Protected routes
+	userGroup.Use(middleware.AuthMiddleware())
 	userGroup.GET("/get-users", usersController.GetUsers)
 }
 
