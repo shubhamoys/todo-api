@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/shubhamoys/todo-api/internal/users/dtos/get_users_dto"
 	"github.com/shubhamoys/todo-api/internal/users/dtos/login_user_dto"
 	"github.com/shubhamoys/todo-api/internal/users/dtos/register_user_dto"
 	"github.com/shubhamoys/todo-api/internal/users/models"
@@ -42,7 +43,7 @@ func (uc *UserController) Register(c *gin.Context) {
 	if err := registerUserDTO.Validate(); err != nil {
 		utils.Logger.Warn("Validation failed :", err)
 
-		utils.ErrorResponse(c, http.StatusBadRequest, "Validation failed", err, nil)
+		utils.ErrorResponse(c, http.StatusBadRequest, "Validation failed. Incorrect email or password", err, nil)
 		return
 	}
 
@@ -91,7 +92,7 @@ func (uc *UserController) Login(c *gin.Context) {
 	if err := loginUserDTO.Validate(); err != nil {
 		utils.Logger.Warn("Validation failed :", err)
 
-		utils.ErrorResponse(c, http.StatusBadRequest, "Validation failed", err, nil)
+		utils.ErrorResponse(c, http.StatusBadRequest, "Validation failed. Incorrect email or password", err, nil)
 		return
 	}
 
@@ -135,4 +136,53 @@ func (uc *UserController) Login(c *gin.Context) {
 	utils.Logger.Info("User login and token generation successful for :", users[0].Email.Value)
 
 	utils.SuccessResponse(c, statusCode, "User login successful", token)
+}
+
+func (uc *UserController) GetUsers(c *gin.Context) {
+	// Step 1: Bind and validate request query parameters
+	var getUsersDTO get_users_dto.GetUsersDTO
+	utils.Logger.Info("Fetching Users started")
+
+	if err := c.ShouldBindQuery(&getUsersDTO); err != nil {
+		utils.Logger.Warn("Invalid query parameters:", err)
+
+		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid query parameters", err, nil)
+		return
+	}
+
+	// Step 2: Validate the DTO
+	if err := getUsersDTO.Validate(); err != nil {
+		utils.Logger.Warn("Validation failed:", err)
+
+		utils.ErrorResponse(c, http.StatusBadRequest, "Validation failed", err, nil)
+		return
+	}
+
+	// Step 3: Map DTO to service query input
+	getUsersQuery := user_inputs.GetUsersQuery{
+		UserID:        getUsersDTO.UserID,
+		UserIDs:       getUsersDTO.UserIDs,
+		Name:          getUsersDTO.Name,
+		EmailValue:    getUsersDTO.EmailValue,
+		EmailVerified: getUsersDTO.EmailVerified,
+		Search:        getUsersDTO.Search,
+		Sort:          getUsersDTO.Sort,
+		Limit:         getUsersDTO.Limit,
+		Page:          getUsersDTO.Page,
+		Fields:        getUsersDTO.Fields,
+	}
+
+	// Step 4: Call the service layer
+	foundUsers, statusCode, err := uc.UserService.GetUsers(getUsersQuery)
+	if err != nil {
+		utils.Logger.Error("Error occurred while fetching users:", err)
+
+		utils.ErrorResponse(c, statusCode, "Failed to fetch users", err, nil)
+		return
+	}
+
+	// Step 5: Return the response
+	utils.Logger.Info("Users fetched successfully")
+
+	utils.SuccessResponse(c, http.StatusOK, "Users fetched successfully", foundUsers)
 }
