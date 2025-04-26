@@ -3,6 +3,7 @@ package models
 import (
 	"time"
 
+	"github.com/shubhamoys/todo-api/constants"
 	"github.com/shubhamoys/todo-api/internal/users/user_inputs"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/crypto/bcrypt"
@@ -14,6 +15,7 @@ type User struct {
 	Name      string             `bson:"name" json:"name" validate:"required"`
 	Email     Email              `bson:"email" json:"email"`
 	Password  Password           `bson:"password" json:"password"`
+	Role      string             `bson:"role" json:"role" validate:"required"`
 	CreatedAt time.Time          `bson:"created_at" json:"created_at"`
 	UpdatedAt time.Time          `bson:"updated_at" json:"updated_at"`
 }
@@ -25,10 +27,17 @@ func NewUser(input user_inputs.CreateUserInput) (*User, error) {
 		return nil, err
 	}
 
+	// Set default role to "User" if not provided or empty
+	role := input.Role
+	if role == "" {
+		role = constants.UserRoles.User
+	}
+
 	return &User{
 		Name:      input.Name,
 		Email:     NewEmail(input.Email),
 		Password:  NewPassword(hashedPassword),
+		Role:      role,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}, nil

@@ -8,14 +8,17 @@ import (
 )
 
 type Config struct {
-	AppPort      string
-	AppEnv       string
-	DBHost       string
-	DBPort       string
-	DBName       string
-	DBUser       string
-	DBPassword   string
-	JWTSecretKey []byte
+	AppPort            string
+	AppEnv             string
+	DBHost             string
+	DBPort             string
+	DBName             string
+	DBUser             string
+	DBPassword         string
+	JWTSecretKey       []byte
+	SuperadminName     string
+	SuperadminEmail    string
+	SuperadminPassword string
 }
 
 var AppConfig Config
@@ -28,14 +31,17 @@ func LoadConfig() {
 	}
 
 	AppConfig = Config{
-		AppEnv:       os.Getenv("APP_ENV"),
-		AppPort:      os.Getenv("APP_PORT"),
-		DBHost:       os.Getenv("DB_HOST"),
-		DBPort:       os.Getenv("DB_PORT"),
-		DBName:       os.Getenv("DB_NAME"),
-		DBUser:       os.Getenv("DB_USERNAME"),
-		DBPassword:   os.Getenv("DB_PASSWORD"),
-		JWTSecretKey: []byte(jwtSecret),
+		AppEnv:             os.Getenv("APP_ENV"),
+		AppPort:            os.Getenv("APP_PORT"),
+		DBHost:             os.Getenv("DB_HOST"),
+		DBPort:             os.Getenv("DB_PORT"),
+		DBName:             os.Getenv("DB_NAME"),
+		DBUser:             os.Getenv("DB_USERNAME"),
+		DBPassword:         os.Getenv("DB_PASSWORD"),
+		JWTSecretKey:       []byte(jwtSecret),
+		SuperadminName:     os.Getenv("SUPERADMIN_NAME"),
+		SuperadminEmail:    os.Getenv("SUPERADMIN_EMAIL"),
+		SuperadminPassword: os.Getenv("SUPERADMIN_PASSWORD"),
 	}
 }
 

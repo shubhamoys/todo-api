@@ -6,6 +6,7 @@ type GetUsersQuery struct {
 	Name          string
 	EmailValue    string
 	EmailVerified *bool
+	Role          string
 	Search        string
 	Sort          string
 	Limit         int64
@@ -18,6 +19,7 @@ type CreateUserInput struct {
 	Name     string
 	Email    string
 	Password string
+	Role     string
 }
 
 type UpdateUserInput struct {
