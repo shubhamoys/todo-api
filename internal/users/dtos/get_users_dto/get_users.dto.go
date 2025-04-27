@@ -8,6 +8,7 @@ type GetUsersDTO struct {
 	Name          string `json:"name,omitempty" form:"name"`
 	EmailValue    string `json:"emailValue,omitempty" form:"emailValue"` // Add form tag
 	EmailVerified *bool  `json:"emailVerified,omitempty" form:"emailVerified"`
+	Role          string `json:"role,omitempty" form:"role"`
 	Search        string `json:"search,omitempty" form:"search"`
 	Sort          string `json:"sort,omitempty" form:"sort"`
 	Limit         int64  `json:"limit,omitempty" form:"limit"`

@@ -61,6 +61,10 @@ func (s *UsersService) GetUsers(query user_inputs.GetUsersQuery) (map[string]int
 		readQuery["email.verified"] = *query.EmailVerified
 	}
 
+	if query.Role != "" {
+		readQuery["role"] = query.Role
+	}
+
 	if query.Search != "" {
 		readQuery["$text"] = bson.M{"$search": query.Search}
 	}
