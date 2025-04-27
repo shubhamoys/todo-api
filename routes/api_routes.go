@@ -2,6 +2,8 @@ package routes
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/shubhamoys/todo-api/internal/todos/tasks_controller"
+	"github.com/shubhamoys/todo-api/internal/todos/tasks_service"
 	"github.com/shubhamoys/todo-api/internal/users/users_controller"
 	"github.com/shubhamoys/todo-api/internal/users/users_service"
 	"github.com/shubhamoys/todo-api/pkg/middleware"
@@ -21,12 +23,15 @@ func UserRoutes(router *gin.Engine) {
 	userGroup.GET("/get-users", usersController.GetUsers)
 }
 
-func TodoRoutes(router *gin.Engine) {
-	// todoGroup := router.Group("/todos")
+func TaskRoutes(router *gin.Engine) {
+	tasksService := tasks_service.NewTasksService()
+	tasksController := tasks_controller.NewTaskController(tasksService)
+	taskGroup := router.Group("/tasks")
+	taskGroup.Use(middleware.AuthMiddleware())
+	taskGroup.Use(middleware.RoleBasedAccess())
 
-	// todoGroup.POST("/", todoController.CreateTodo)    // Create a new todo
-	// todoGroup.GET("/", todoController.GetTodos)       // Get all todos
-	// todoGroup.GET("/:id", todoController.GetTodo)     // Get a specific todo by ID
-	// todoGroup.PUT("/:id", todoController.UpdateTodo)  // Update a specific todo by ID
-	// todoGroup.DELETE("/:id", todoController.DeleteTodo) // Delete a specific todo by ID
+	taskGroup.POST("/", tasksController.CreateTask)      // Create a new todo
+	taskGroup.GET("/", tasksController.GetTasks)         // Get all todos
+	taskGroup.PUT("/:id", tasksController.UpdateTask)    // Update a specific todo by Id
+	taskGroup.DELETE("/:id", tasksController.DeleteTask) // Delete a specific todo by Id
 }

@@ -64,7 +64,7 @@ func (uc *UserController) Register(c *gin.Context) {
 	}
 
 	// Generate JWT token for the user
-	token, err := auth.GenerateJWT(user.ID.Hex())
+	token, err := auth.GenerateJWT(user.Id.Hex())
 	if err != nil {
 		utils.Logger.Error("Unexpected error occured when generating token :", err)
 
@@ -127,7 +127,7 @@ func (uc *UserController) Login(c *gin.Context) {
 	}
 
 	// Generate JWT token for the user
-	token, err := auth.GenerateJWT(users[0].ID.Hex())
+	token, err := auth.GenerateJWT(users[0].Id.Hex())
 	if err != nil {
 		utils.Logger.Error("Unexpected error occured when generating token :", err)
 
@@ -140,7 +140,7 @@ func (uc *UserController) Login(c *gin.Context) {
 }
 
 func (uc *UserController) GetUsers(c *gin.Context) {
-	// Get user role and ID from context set by RoleBasedAccess middleware
+	// Get user role and Id from context set by RoleBasedAccess middleware
 	userRole, _ := c.Get("userRole")
 	userId, _ := c.Get("userId")
 
@@ -165,8 +165,8 @@ func (uc *UserController) GetUsers(c *gin.Context) {
 
 	// Step 3: Map DTO to service query input
 	getUsersQuery := user_inputs.GetUsersQuery{
-		UserID:        getUsersDTO.UserID,
-		UserIDs:       getUsersDTO.UserIDs,
+		UserId:        getUsersDTO.UserId,
+		UserIds:       getUsersDTO.UserIds,
 		Name:          getUsersDTO.Name,
 		EmailValue:    getUsersDTO.EmailValue,
 		EmailVerified: getUsersDTO.EmailVerified,
@@ -179,7 +179,7 @@ func (uc *UserController) GetUsers(c *gin.Context) {
 
 	// Restrict normal users from fetching other users
 	if userRole == constants.UserRoles.User {
-		getUsersQuery.UserID = userId.(string)
+		getUsersQuery.UserId = userId.(string)
 	}
 
 	// Step 4: Call the service layer

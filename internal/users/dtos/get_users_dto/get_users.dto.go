@@ -3,8 +3,8 @@ package get_users_dto
 import "github.com/shubhamoys/todo-api/utils"
 
 type GetUsersDTO struct {
-	UserID        string `json:"userId,omitempty" form:"userId"` // Add from tag to bind the query params with struct
-	UserIDs       string `json:"userIds,omitempty" form:"userIds"`
+	UserId        string `json:"userId,omitempty" form:"userId"` // Add from tag to bind the query params with struct
+	UserIds       string `json:"userIds,omitempty" form:"userIds"`
 	Name          string `json:"name,omitempty" form:"name"`
 	EmailValue    string `json:"emailValue,omitempty" form:"emailValue"` // Add form tag
 	EmailVerified *bool  `json:"emailVerified,omitempty" form:"emailVerified"`

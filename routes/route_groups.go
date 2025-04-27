@@ -7,5 +7,5 @@ import (
 func RouteGroups(router *gin.Engine) {
 	UserRoutes(router)
 
-	TodoRoutes(router)
+	TaskRoutes(router)
 }

@@ -33,20 +33,20 @@ func (s *UsersService) GetUsers(query user_inputs.GetUsersQuery) (map[string]int
 	readQuery := bson.M{}
 
 	// Filters
-	if query.UserID != "" {
-		id, _ := primitive.ObjectIDFromHex(query.UserID)
+	if query.UserId != "" {
+		id, _ := primitive.ObjectIDFromHex(query.UserId)
 		readQuery["_id"] = id
 	}
 
-	if query.UserIDs != "" {
-		ids := strings.Split(query.UserIDs, ",")
-		var objIDs []primitive.ObjectID
+	if query.UserIds != "" {
+		ids := strings.Split(query.UserIds, ",")
+		var objIds []primitive.ObjectID
 		for _, id := range ids {
 			if oid, err := primitive.ObjectIDFromHex(id); err == nil {
-				objIDs = append(objIDs, oid)
+				objIds = append(objIds, oid)
 			}
 		}
-		readQuery["_id"] = bson.M{"$in": objIDs}
+		readQuery["_id"] = bson.M{"$in": objIds}
 	}
 
 	if query.Name != "" {
@@ -172,11 +172,11 @@ func (s *UsersService) RegisterUser(createUserInput user_inputs.CreateUserInput)
 		return nil, http.StatusInternalServerError, errors.New(formattedMessage)
 	}
 
-	// Update the newUser object with the generated ID
+	// Update the newUser object with the generated Id
 	if oid, ok := result.InsertedID.(primitive.ObjectID); ok {
-		newUser.ID = oid
+		newUser.Id = oid
 	} else {
-		utils.Logger.Error("Failed to cast inserted ID to ObjectID")
+		utils.Logger.Error("Failed to cast inserted Id to ObjectID")
 	}
 
 	utils.Logger.Info("User registered successfully :", newUser.Email.Value)

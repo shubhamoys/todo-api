@@ -1,8 +1,10 @@
 package user_inputs
 
+import "go.mongodb.org/mongo-driver/bson/primitive"
+
 type GetUsersQuery struct {
-	UserID        string
-	UserIDs       string
+	UserId        string
+	UserIds       string
 	Name          string
 	EmailValue    string
 	EmailVerified *bool
@@ -23,7 +25,7 @@ type CreateUserInput struct {
 }
 
 type UpdateUserInput struct {
-	Id       string
+	Id       primitive.ObjectID
 	Name     string
 	Email    string
 	Password string

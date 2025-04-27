@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 
@@ -15,7 +16,10 @@ func AuthMiddleware() gin.HandlerFunc {
 		// Extract the Authorization header
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
-			utils.ErrorResponse(c, http.StatusUnauthorized, "Authorization header is missing", nil, nil)
+			utils.ErrorResponse(c, http.StatusUnauthorized,
+				"Authorization header is missing",
+				errors.New("no authorization header provided"),
+				nil)
 			c.Abort()
 			return
 		}
