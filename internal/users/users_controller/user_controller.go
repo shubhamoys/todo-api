@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/shubhamoys/todo-api/constants"
 	"github.com/shubhamoys/todo-api/internal/users/dtos/get_users_dto"
 	"github.com/shubhamoys/todo-api/internal/users/dtos/login_user_dto"
 	"github.com/shubhamoys/todo-api/internal/users/dtos/register_user_dto"
@@ -63,7 +64,7 @@ func (uc *UserController) Register(c *gin.Context) {
 	}
 
 	// Generate JWT token for the user
-	token, err := auth.GenerateJWT(user.Email.Value)
+	token, err := auth.GenerateJWT(user.ID.Hex())
 	if err != nil {
 		utils.Logger.Error("Unexpected error occured when generating token :", err)
 
@@ -126,7 +127,7 @@ func (uc *UserController) Login(c *gin.Context) {
 	}
 
 	// Generate JWT token for the user
-	token, err := auth.GenerateJWT(users[0].Email.Value)
+	token, err := auth.GenerateJWT(users[0].ID.Hex())
 	if err != nil {
 		utils.Logger.Error("Unexpected error occured when generating token :", err)
 
@@ -139,6 +140,10 @@ func (uc *UserController) Login(c *gin.Context) {
 }
 
 func (uc *UserController) GetUsers(c *gin.Context) {
+	// Get user role and ID from context set by RoleBasedAccess middleware
+	userRole, _ := c.Get("userRole")
+	userId, _ := c.Get("userId")
+
 	// Step 1: Bind and validate request query parameters
 	var getUsersDTO get_users_dto.GetUsersDTO
 	utils.Logger.Info("Fetching Users started")
@@ -170,6 +175,11 @@ func (uc *UserController) GetUsers(c *gin.Context) {
 		Limit:         getUsersDTO.Limit,
 		Page:          getUsersDTO.Page,
 		Fields:        getUsersDTO.Fields,
+	}
+
+	// Restrict normal users from fetching other users
+	if userRole == constants.UserRoles.User {
+		getUsersQuery.UserID = userId.(string)
 	}
 
 	// Step 4: Call the service layer

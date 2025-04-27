@@ -17,6 +17,7 @@ func UserRoutes(router *gin.Engine) {
 
 	// Protected routes
 	userGroup.Use(middleware.AuthMiddleware())
+	userGroup.Use(middleware.RoleBasedAccess())
 	userGroup.GET("/get-users", usersController.GetUsers)
 }
 
