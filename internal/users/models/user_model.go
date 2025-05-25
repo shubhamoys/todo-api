@@ -11,7 +11,7 @@ import (
 
 // User represents a user in the system
 type User struct {
-	ID        primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty"`
+	Id        primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty"`
 	Name      string             `bson:"name" json:"name" validate:"required"`
 	Email     Email              `bson:"email" json:"email"`
 	Password  Password           `bson:"password" json:"password"`

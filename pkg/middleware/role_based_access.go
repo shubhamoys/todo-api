@@ -23,12 +23,12 @@ func RoleBasedAccess() gin.HandlerFunc {
 		}
 
 		claims := userClaims.(*auth.Claims)
-		userId := claims.UserID
+		userId := claims.UserId
 
 		// Get user details including role from database
 		userService := users_service.NewUsersService()
 		foundUser, statusCode, err := userService.GetUsers(user_inputs.GetUsersQuery{
-			UserID: userId,
+			UserId: userId,
 		})
 
 		if err != nil {
@@ -47,7 +47,7 @@ func RoleBasedAccess() gin.HandlerFunc {
 		user := users[0]
 		userRole := user.Role
 
-		// Store user role and ID in context for use in controllers
+		// Store user role and Id in context for use in controllers
 		c.Set("userRole", userRole)
 		c.Set("userId", userId)
 
@@ -71,7 +71,7 @@ func RoleBasedAccess() gin.HandlerFunc {
 				return
 			}
 
-			// If userId is provided, it must match their own ID
+			// If userId is provided, it must match their own Id
 			if requestedUserId != userId {
 				utils.ErrorResponse(c, http.StatusForbidden, "Access denied. You can only access your own data", errors.New("unauthorized access"), nil)
 				c.Abort()
