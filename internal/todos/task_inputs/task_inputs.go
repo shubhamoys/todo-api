@@ -26,6 +26,7 @@ type CreateTaskInput struct {
 
 type UpdateTaskInput struct {
 	Id          primitive.ObjectID
+	UserId      primitive.ObjectID
 	Name        string
 	Description string
 	Status      string

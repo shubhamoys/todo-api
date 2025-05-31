@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/shubhamoys/todo-api/constants"
 	create_tasko_dto "github.com/shubhamoys/todo-api/internal/todos/dtos/create_task_dto"
+	"github.com/shubhamoys/todo-api/internal/todos/dtos/get_tasks_dto"
 	"github.com/shubhamoys/todo-api/internal/todos/task_inputs"
 	"github.com/shubhamoys/todo-api/internal/todos/tasks_service"
 	"github.com/shubhamoys/todo-api/utils"
@@ -92,6 +93,63 @@ func (tc *TaskController) CreateTask(c *gin.Context) {
 }
 
 func (tc *TaskController) GetTasks(c *gin.Context) {
+	// Get user role and Id from context set by RoleBasedAccess middleware
+	userRole, _ := c.Get("userRole")
+	userId, _ := c.Get("userId")
+
+	// Step 1: Bind and validate request query parameters
+	var getTasksDTO get_tasks_dto.GetTasksDTO
+	utils.Logger.Info("Fetching Tasks started")
+
+	if err := c.ShouldBindQuery(&getTasksDTO); err != nil {
+		utils.Logger.Warn("Invalid query parameters:", err)
+
+		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid query parameters", err, nil)
+		return
+	}
+
+	// Step 2: Validate the DTO
+	if err := getTasksDTO.Validate(); err != nil {
+		utils.Logger.Warn("Validation failed:", err)
+
+		utils.ErrorResponse(c, http.StatusBadRequest, "Validation failed", err, nil)
+		return
+	}
+
+	// Step 3: Map DTO to service query input
+	getTasksQuery := task_inputs.GetTasksQuery{
+		TaskId:      getTasksDTO.TaskId,
+		TaskIds:     getTasksDTO.TaskIds,
+		UserId:      getTasksDTO.UserId,
+		Name:        getTasksDTO.Name,
+		Description: getTasksDTO.Description,
+		Status:      getTasksDTO.Status,
+		Search:      getTasksDTO.Search,
+		Sort:        getTasksDTO.Sort,
+		Limit:       getTasksDTO.Limit,
+		Page:        getTasksDTO.Page,
+		Fields:      getTasksDTO.Fields,
+		Populate:    getTasksDTO.Populate,
+	}
+
+	// Restrict normal users from fetching other task of other users
+	if userRole == constants.UserRoles.User {
+		getTasksQuery.UserId = userId.(string)
+	}
+
+	// Step 4: Call the service layer
+	foundTasks, statusCode, err := tc.TaskService.GetTasks(getTasksQuery)
+	if err != nil {
+		utils.Logger.Error("Error occurred while fetching tasks:", err)
+
+		utils.ErrorResponse(c, statusCode, "Failed to fetch tasks", err, nil)
+		return
+	}
+
+	// Step 5: Return the response
+	utils.Logger.Info("Tasks fetched successfully")
+
+	utils.SuccessResponse(c, http.StatusOK, "Tasks fetched successfully", foundTasks)
 }
 
 func (tc *TaskController) UpdateTask(c *gin.Context) {
