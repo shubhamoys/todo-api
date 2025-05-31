@@ -1,15 +1,14 @@
-package update_todo_dto
+package update_task_dto
 
 import (
 	"github.com/shubhamoys/todo-api/utils"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type UpdateTaskDTO struct {
-	TaskId      primitive.ObjectID `json:"taskId" validate:"required"`
-	Name        string             `json:"name" validate:"required"`
-	Description string             `json:"description" validate:"required"`
-	Status      string             `json:"status" validate:"required"`
+	// TaskId      primitive.ObjectID `json:"taskId" validate:"required"`
+	Name        string `json:"name" validate:"required"`
+	Description string `json:"description" validate:"required"`
+	Status      string `json:"status" validate:"required"`
 }
 
 // Validate the struct and return user-friendly error messages

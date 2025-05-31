@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/shubhamoys/todo-api/constants"
 	"github.com/shubhamoys/todo-api/db"
@@ -15,6 +16,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // TaskService handles task-related operations
@@ -35,7 +37,11 @@ func (s *TasksService) CreateTask(createTaskInput task_inputs.CreateTaskInput) (
 	if err != nil {
 		utils.Logger.Error("Invalid input data :", err)
 
-		return nil, http.StatusBadRequest, errors.New("invalid input data")
+		formattedMessage := constants.FormatErrorMessage(
+			constants.ErrorConstants.InvalidInput.Message.User,
+			map[string]string{"message": err.Error()},
+		)
+		return nil, http.StatusBadRequest, errors.New(formattedMessage)
 	}
 
 	// Insert the task into the database
@@ -174,19 +180,32 @@ func (s *TasksService) GetTasks(query task_inputs.GetTasksQuery) (map[string]int
 	cursor, err := s.collection.Aggregate(context.TODO(), pipelineBuilder.Build())
 	if err != nil {
 		utils.Logger.Error("Failed to execute aggregation pipeline:", err)
-		return nil, http.StatusInternalServerError, errors.New("failed to fetch tasks")
+
+		formattedMessage := constants.FormatErrorMessage(
+			constants.ErrorConstants.DatabaseError.Message.User,
+			map[string]string{"message": err.Error()},
+		)
+		return nil, http.StatusInternalServerError, errors.New(formattedMessage)
 	}
 	defer cursor.Close(context.TODO())
 
 	var tasks []models.Task
 	if err = cursor.All(context.TODO(), &tasks); err != nil {
-		return nil, http.StatusInternalServerError, err
+		formattedMessage := constants.FormatErrorMessage(
+			constants.ErrorConstants.DatabaseError.Message.User,
+			map[string]string{"message": err.Error()},
+		)
+		return nil, http.StatusInternalServerError, errors.New(formattedMessage)
 	}
 
 	// Get total count (without pagination)
 	count, err := s.collection.CountDocuments(context.TODO(), readQuery)
 	if err != nil {
-		return nil, http.StatusInternalServerError, err
+		formattedMessage := constants.FormatErrorMessage(
+			constants.ErrorConstants.DatabaseError.Message.User,
+			map[string]string{"message": "Failed to get total count"},
+		)
+		return nil, http.StatusInternalServerError, errors.New(formattedMessage)
 	}
 
 	return map[string]interface{}{
@@ -194,4 +213,135 @@ func (s *TasksService) GetTasks(query task_inputs.GetTasksQuery) (map[string]int
 		"currentCount": len(tasks),
 		"tasks":        tasks,
 	}, http.StatusOK, nil
+}
+
+func (s *TasksService) UpdateTask(updateTaskInput task_inputs.UpdateTaskInput) (*models.Task, int, error) {
+	utils.Logger.Info("Updating task:", updateTaskInput.Id.Hex())
+
+	// Build update document
+	update := bson.M{
+		"$set": bson.M{
+			"updatedAt": time.Now(),
+		},
+	}
+
+	// Only add fields that are provided
+	if updateTaskInput.Name != "" {
+		update["$set"].(bson.M)["name"] = updateTaskInput.Name
+	}
+	if updateTaskInput.Description != "" {
+		update["$set"].(bson.M)["description"] = updateTaskInput.Description
+	}
+	if updateTaskInput.Status != "" {
+		update["$set"].(bson.M)["status"] = updateTaskInput.Status
+	}
+
+	// Find and update the task
+	var updatedTask models.Task
+	err := s.collection.FindOneAndUpdate(
+		context.TODO(),
+		bson.M{"_id": updateTaskInput.Id},
+		update,
+		options.FindOneAndUpdate().SetReturnDocument(options.After),
+	).Decode(&updatedTask)
+
+	// Handle errors
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			utils.Logger.Warn("Task not found:", updateTaskInput.Id.Hex())
+			formattedMessage := constants.FormatErrorMessage(
+				constants.ErrorConstants.EntityNotFound.Message.User,
+				map[string]string{"entity": "Task"},
+			)
+			return nil, http.StatusNotFound, errors.New(formattedMessage)
+		}
+
+		utils.Logger.Error("Database error while updating task:", err)
+		formattedMessage := constants.FormatErrorMessage(
+			constants.ErrorConstants.DatabaseError.Message.User,
+			map[string]string{"message": err.Error()},
+		)
+		return nil, http.StatusInternalServerError, errors.New(formattedMessage)
+	}
+
+	utils.Logger.Info("Task updated successfully:", updatedTask.Id.Hex())
+	return &updatedTask, http.StatusOK, nil
+}
+
+func (s *TasksService) VerifyTaskOwnership(taskId primitive.ObjectID, userId string) (bool, error) {
+	// Convert userId to ObjectId
+	userObjId, err := primitive.ObjectIDFromHex(userId)
+	if err != nil {
+		formattedMessage := constants.FormatErrorMessage(
+			constants.ErrorConstants.InvalidField.Message.User,
+			map[string]string{"field": "User ID"},
+		)
+		return false, errors.New(formattedMessage)
+	}
+
+	// Use existing Tasks with minimal projection
+	getTaskQuery := task_inputs.GetTasksQuery{
+		TaskId: taskId.Hex(),
+		Fields: "userId", // Only fetch userId field
+	}
+
+	result, statusCode, err := s.GetTasks(getTaskQuery)
+	if err != nil {
+		formattedMessage := constants.FormatErrorMessage(
+			constants.ErrorConstants.DatabaseError.Message.User,
+			map[string]string{"message": err.Error()},
+		)
+		return false, errors.New(formattedMessage)
+	}
+
+	if statusCode != http.StatusOK {
+		formattedMessage := constants.FormatErrorMessage(
+			constants.ErrorConstants.UnkownError.Message.User,
+			map[string]string{"message": "Failed to verify task ownership"},
+		)
+		return false, errors.New(formattedMessage)
+	}
+
+	// Check if any tasks were found
+	tasks, ok := result["tasks"].([]models.Task)
+	if !ok || len(tasks) == 0 {
+		formattedMessage := constants.FormatErrorMessage(
+			constants.ErrorConstants.EntityNotFound.Message.User,
+			map[string]string{"entity": "Task"},
+		)
+		return false, errors.New(formattedMessage)
+	}
+
+	// Compare userIds
+	return tasks[0].UserId == userObjId, nil
+}
+
+func (s *TasksService) DeleteTask(taskId primitive.ObjectID) (int, error) {
+	utils.Logger.Info("Deleting task:", taskId.Hex())
+
+	// Delete the task
+	result, err := s.collection.DeleteOne(context.TODO(), bson.M{"_id": taskId})
+	if err != nil {
+		utils.Logger.Error("Database error while deleting task:", err)
+
+		formattedMessage := constants.FormatErrorMessage(
+			constants.ErrorConstants.DatabaseError.Message.User,
+			map[string]string{"message": err.Error()},
+		)
+		return http.StatusInternalServerError, errors.New(formattedMessage)
+	}
+
+	// Check if any document was deleted
+	if result.DeletedCount == 0 {
+		utils.Logger.Warn("Task not found:", taskId.Hex())
+
+		formattedMessage := constants.FormatErrorMessage(
+			constants.ErrorConstants.EntityNotFound.Message.User,
+			map[string]string{"entity": "Task"},
+		)
+		return http.StatusNotFound, errors.New(formattedMessage)
+	}
+
+	utils.Logger.Info("Task deleted successfully:", taskId.Hex())
+	return http.StatusOK, nil
 }

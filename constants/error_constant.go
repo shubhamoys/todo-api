@@ -18,6 +18,9 @@ var ErrorConstants = struct {
 	EntityNotFound   ErrorMessage
 	NoEntityData     ErrorMessage
 	UnkownError      ErrorMessage
+	InvalidInput     ErrorMessage
+	Unauthorized     ErrorMessage
+	ValidationError  ErrorMessage
 }{
 	EndpointNotExist: ErrorMessage{
 		AppStatusCode: 1000000,
@@ -56,7 +59,7 @@ var ErrorConstants = struct {
 		},
 	},
 	DuplicateEntity: ErrorMessage{
-		AppStatusCode: 1000003,
+		AppStatusCode: 1000004,
 		Message: struct {
 			Log  string
 			Dev  string
@@ -68,7 +71,7 @@ var ErrorConstants = struct {
 		},
 	},
 	DatabaseError: ErrorMessage{
-		AppStatusCode: 1000003,
+		AppStatusCode: 1000005,
 		Message: struct {
 			Log  string
 			Dev  string
@@ -80,7 +83,7 @@ var ErrorConstants = struct {
 		},
 	},
 	EntityNotFound: ErrorMessage{
-		AppStatusCode: 1000003,
+		AppStatusCode: 1000006,
 		Message: struct {
 			Log  string
 			Dev  string
@@ -92,7 +95,7 @@ var ErrorConstants = struct {
 		},
 	},
 	NoEntityData: ErrorMessage{
-		AppStatusCode: 1000003,
+		AppStatusCode: 1000007,
 		Message: struct {
 			Log  string
 			Dev  string
@@ -104,7 +107,7 @@ var ErrorConstants = struct {
 		},
 	},
 	UnkownError: ErrorMessage{
-		AppStatusCode: 1000003,
+		AppStatusCode: 1000008,
 		Message: struct {
 			Log  string
 			Dev  string
@@ -113,6 +116,42 @@ var ErrorConstants = struct {
 			Log:  "err occurred: {message}",
 			Dev:  "err occurred: {message}",
 			User: "err occurred: {message}",
+		},
+	},
+	InvalidInput: ErrorMessage{
+		AppStatusCode: 1000009,
+		Message: struct {
+			Log  string
+			Dev  string
+			User string
+		}{
+			Log:  "Invalid input data provided",
+			Dev:  "Input validation failed",
+			User: "Invalid input data provided: {message}",
+		},
+	},
+	Unauthorized: ErrorMessage{
+		AppStatusCode: 1000010,
+		Message: struct {
+			Log  string
+			Dev  string
+			User string
+		}{
+			Log:  "Unauthorized access",
+			Dev:  "User not authorized to access {resource}",
+			User: "You don't have permission to access this {resource}",
+		},
+	},
+	ValidationError: ErrorMessage{
+		AppStatusCode: 1000011,
+		Message: struct {
+			Log  string
+			Dev  string
+			User string
+		}{
+			Log:  "Validation error",
+			Dev:  "Validation failed: {message}",
+			User: "The provided data is invalid: {message}",
 		},
 	},
 }
