@@ -14,6 +14,7 @@ type GetTasksDTO struct {
 	Limit       int64  `json:"limit,omitempty" form:"limit"`
 	Page        int64  `json:"page,omitempty" form:"page"`
 	Fields      string `json:"fields,omitempty" form:"fields"`
+	Populate    string `json:"populate,omitempty" form:"populate"`
 }
 
 // Validate the struct and return user-friendly error messages

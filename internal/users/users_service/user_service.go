@@ -3,18 +3,20 @@ package users_service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/shubhamoys/todo-api/constants"
 	"github.com/shubhamoys/todo-api/db"
 	"github.com/shubhamoys/todo-api/internal/users/models"
 	"github.com/shubhamoys/todo-api/internal/users/user_inputs"
+	"github.com/shubhamoys/todo-api/pkg/mongodb"
 	"github.com/shubhamoys/todo-api/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // UserService handles user-related operations
@@ -66,8 +68,24 @@ func (s *UsersService) GetUsers(query user_inputs.GetUsersQuery) (map[string]int
 	}
 
 	if query.Search != "" {
-		readQuery["$text"] = bson.M{"$search": query.Search}
+		// Create case-insensitive regex pattern with partial matching
+		searchPattern := primitive.Regex{
+			Pattern: fmt.Sprintf(".*%s.*", regexp.QuoteMeta(query.Search)),
+			Options: "i",
+		}
+
+		// Search in both name and email
+		readQuery["$or"] = []bson.M{
+			{"name": bson.M{"$regex": searchPattern}},
+			{"email.value": bson.M{"$regex": searchPattern}},
+		}
 	}
+
+	// Create pipeline builder
+	pipelineBuilder := mongodb.NewPipelineBuilder()
+
+	// Add match stage with filters
+	pipelineBuilder.AddMatch(readQuery)
 
 	// Sorting
 	sort := bson.D{{Key: "timestamp.createdAt", Value: -1}}
@@ -81,6 +99,7 @@ func (s *UsersService) GetUsers(query user_inputs.GetUsersQuery) (map[string]int
 	case "named":
 		sort = bson.D{{Key: "name", Value: -1}}
 	}
+	pipelineBuilder.AddSort(sort)
 
 	// Pagination
 	limit := query.Limit
@@ -92,6 +111,7 @@ func (s *UsersService) GetUsers(query user_inputs.GetUsersQuery) (map[string]int
 		page = 1
 	}
 	skip := (page - 1) * limit
+	pipelineBuilder.AddPagination(skip, limit)
 
 	// Projection
 	projection := bson.M{}
@@ -101,27 +121,37 @@ func (s *UsersService) GetUsers(query user_inputs.GetUsersQuery) (map[string]int
 			projection[field] = 1
 		}
 	}
+	pipelineBuilder.AddProjection(projection)
 
-	findOptions := options.Find().
-		SetLimit(limit).
-		SetSkip(skip).
-		SetSort(sort).
-		SetProjection(projection)
-
-	cursor, err := s.collection.Find(context.TODO(), readQuery, findOptions)
+	// Execute pipeline
+	cursor, err := s.collection.Aggregate(context.TODO(), pipelineBuilder.Build())
 	if err != nil {
-		return nil, http.StatusInternalServerError, err
+		utils.Logger.Error("Failed to execute aggregation pipeline:", err)
+		formattedMessage := constants.FormatErrorMessage(
+			constants.ErrorConstants.DatabaseError.Message.User,
+			map[string]string{"message": err.Error()},
+		)
+		return nil, http.StatusInternalServerError, errors.New(formattedMessage)
 	}
 	defer cursor.Close(context.TODO())
 
 	var users []models.User
 	if err = cursor.All(context.TODO(), &users); err != nil {
-		return nil, http.StatusInternalServerError, err
+		formattedMessage := constants.FormatErrorMessage(
+			constants.ErrorConstants.DatabaseError.Message.User,
+			map[string]string{"message": err.Error()},
+		)
+		return nil, http.StatusInternalServerError, errors.New(formattedMessage)
 	}
 
+	// Get total count (without pagination)
 	count, err := s.collection.CountDocuments(context.TODO(), readQuery)
 	if err != nil {
-		return nil, http.StatusInternalServerError, err
+		formattedMessage := constants.FormatErrorMessage(
+			constants.ErrorConstants.DatabaseError.Message.User,
+			map[string]string{"message": "Failed to get total count"},
+		)
+		return nil, http.StatusInternalServerError, errors.New(formattedMessage)
 	}
 
 	return map[string]interface{}{

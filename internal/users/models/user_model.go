@@ -16,8 +16,8 @@ type User struct {
 	Email     Email              `bson:"email" json:"email"`
 	Password  Password           `bson:"password" json:"password"`
 	Role      string             `bson:"role" json:"role" validate:"required"`
-	CreatedAt time.Time          `bson:"created_at" json:"created_at"`
-	UpdatedAt time.Time          `bson:"updated_at" json:"updated_at"`
+	CreatedAt time.Time          `bson:"createdAt" json:"createdAt"`
+	UpdatedAt time.Time          `bson:"updatedAt" json:"updatedAt"`
 }
 
 // NewUser constructor to initialize a user with default values

@@ -13,22 +13,25 @@ import (
 func EnsureUserIndexes(db *mongo.Database) {
 	usersCollection := db.Collection("users")
 
-	uniqueEmailIndex := mongo.IndexModel{
-		Keys: bson.D{{Key: "email.value", Value: 1}}, // Unique index on email.value
-		Options: options.Index().
-			SetUnique(true).
-			SetSparse(true),
-	}
-
-	// Full-text index on name and email.value
-	textIndex := mongo.IndexModel{
-		Keys: bson.D{
-			{Key: "name", Value: "text"},
-			{Key: "email.value", Value: "text"},
+	indexes := []mongo.IndexModel{
+		{
+			// Unique email index
+			Keys: bson.D{{Key: "email.value", Value: 1}},
+			Options: options.Index().
+				SetUnique(true).
+				SetSparse(true),
+		},
+		{
+			// Index for name search
+			Keys: bson.D{{Key: "name", Value: 1}},
+		},
+		{
+			// Index for email search
+			Keys: bson.D{{Key: "email.value", Value: 1}},
 		},
 	}
 
-	_, err := usersCollection.Indexes().CreateMany(context.Background(), []mongo.IndexModel{uniqueEmailIndex, textIndex})
+	_, err := usersCollection.Indexes().CreateMany(context.Background(), indexes)
 	if err != nil {
 		utils.Logger.Error("Error creating user indexes:", err)
 	}

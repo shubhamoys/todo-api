@@ -6,7 +6,7 @@ type Password struct {
 	Hash      string    `bson:"hash" json:"-"`
 	OTP       string    `bson:"otp,omitempty" json:"otp,omitempty"`
 	Reset     bool      `bson:"reset" json:"reset"`
-	UpdatedAt time.Time `bson:"updated_at" json:"updated_at"`
+	UpdatedAt time.Time `bson:"updatedAt" json:"updatedAt"`
 }
 
 // NewPassword creates an Password instance with default values
