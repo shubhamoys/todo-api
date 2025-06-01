@@ -8,5 +8,6 @@ import (
 // EnsureIndexes calls all index functions for different collections
 func EnsureIndexes(db *mongo.Database) {
 	indexes.EnsureUserIndexes(db)
+	indexes.EnsureTaskIndexes(db)
 	// Add more index functions as needed
 }

@@ -3,7 +3,9 @@ package tasks_service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 
@@ -27,7 +29,7 @@ type TasksService struct {
 // NewTaskService creates a new TaskService with the required dependencies
 func NewTasksService() *TasksService {
 	return &TasksService{
-		collection: db.GetCollection("todos"),
+		collection: db.GetCollection("tasks"),
 	}
 }
 
@@ -107,7 +109,17 @@ func (s *TasksService) GetTasks(query task_inputs.GetTasksQuery) (map[string]int
 	}
 
 	if query.Search != "" {
-		readQuery["$text"] = bson.M{"$search": query.Search}
+		// Create case-insensitive regex pattern with partial matching
+		searchPattern := primitive.Regex{
+			Pattern: fmt.Sprintf(".*%s.*", regexp.QuoteMeta(query.Search)), // Add wildcards before and after
+			Options: "i",                                                   // "i" for case-insensitive
+		}
+
+		// Search in both name and description
+		readQuery["$or"] = []bson.M{
+			{"name": bson.M{"$regex": searchPattern}},
+			{"description": bson.M{"$regex": searchPattern}},
+		}
 	}
 
 	// Create pipeline builder
