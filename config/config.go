@@ -8,6 +8,7 @@ import (
 )
 
 type Config struct {
+	AppURL             string
 	AppPort            string
 	AppEnv             string
 	DBHost             string
@@ -31,6 +32,7 @@ func LoadConfig() {
 	}
 
 	AppConfig = Config{
+		AppURL:             os.Getenv("APP_URL"),
 		AppEnv:             os.Getenv("APP_ENV"),
 		AppPort:            os.Getenv("APP_PORT"),
 		DBHost:             os.Getenv("DB_HOST"),

@@ -72,9 +72,14 @@ func (uc *UserController) Register(c *gin.Context) {
 	}
 
 	// Step 4: Return response to the client
+	response := map[string]interface{}{
+		"user":  user,
+		"token": token,
+	}
+
 	utils.Logger.Info("User registration and token generation successful for :", user.Email.Value)
 
-	utils.SuccessResponse(c, statusCode, "User registered successfully", token)
+	utils.SuccessResponse(c, statusCode, "User registered successfully", response)
 }
 
 func (uc *UserController) Login(c *gin.Context) {
@@ -134,9 +139,15 @@ func (uc *UserController) Login(c *gin.Context) {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Unexpected error occured", err, nil)
 	}
 
+	// Step 4: Return response to the client
+	response := map[string]interface{}{
+		"user":  users[0],
+		"token": token,
+	}
+
 	utils.Logger.Info("User login and token generation successful for :", users[0].Email.Value)
 
-	utils.SuccessResponse(c, statusCode, "User login successful", token)
+	utils.SuccessResponse(c, statusCode, "User login successful", response)
 }
 
 func (uc *UserController) GetUsers(c *gin.Context) {
