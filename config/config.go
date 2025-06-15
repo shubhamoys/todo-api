@@ -11,6 +11,10 @@ type Config struct {
 	AppURL             string
 	AppPort            string
 	AppEnv             string
+	AllowedOrigins     string
+	AllowedMethods     string
+	AllowedHeaders     string
+	AllowCredentials   bool
 	DBHost             string
 	DBPort             string
 	DBName             string
@@ -35,16 +39,28 @@ func LoadConfig() {
 		AppURL:             os.Getenv("APP_URL"),
 		AppEnv:             os.Getenv("APP_ENV"),
 		AppPort:            os.Getenv("APP_PORT"),
-		DBHost:             os.Getenv("DB_HOST"),
-		DBPort:             os.Getenv("DB_PORT"),
-		DBName:             os.Getenv("DB_NAME"),
-		DBUser:             os.Getenv("DB_USERNAME"),
-		DBPassword:         os.Getenv("DB_PASSWORD"),
+		AllowedOrigins:     getEnvOrDefault("CORS_ALLOWED_ORIGINS", "*"),
+		AllowedMethods:     getEnvOrDefault("CORS_ALLOWED_METHODS", "GET,POST,PUT,DELETE,OPTIONS"),
+		AllowedHeaders:     getEnvOrDefault("CORS_ALLOWED_HEADERS", "Content-Type,Content-Length,Accept-Encoding,X-CSRF-Token,Authorization,accept,origin,Cache-Control,X-Requested-With"),
+		AllowCredentials:   os.Getenv("CORS_ALLOW_CREDENTIALS") != "false", // defaults to true
+		DBHost:             getEnvOrDefault("DB_HOST", "localhost"),
+		DBPort:             getEnvOrDefault("DB_PORT", "27017"),
+		DBName:             getEnvOrDefault("DB_NAME", "todo_app"),
+		DBUser:             getEnvOrDefault("DB_USERNAME", ""),
+		DBPassword:         getEnvOrDefault("DB_PASSWORD", ""),
 		JWTSecretKey:       []byte(jwtSecret),
 		SuperadminName:     os.Getenv("SUPERADMIN_NAME"),
 		SuperadminEmail:    os.Getenv("SUPERADMIN_EMAIL"),
 		SuperadminPassword: os.Getenv("SUPERADMIN_PASSWORD"),
 	}
+}
+
+// Helper function to get environment variable with fallback
+func getEnvOrDefault(key, fallback string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return fallback
 }
 
 func GetMongoURI() string {

@@ -59,6 +59,8 @@ func main() {
 
 	router := gin.Default()
 
+	// Add the CORS middleware before any routes
+	router.Use(middleware.CorsMiddleware())
 	// Register the middleware logger
 	router.Use(middleware.RequestLogger())
 
