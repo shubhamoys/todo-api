@@ -27,7 +27,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		// Check if the token is in the format "Bearer <token>"
 		parts := strings.Split(authHeader, " ")
 		if len(parts) != 2 || strings.ToLower(parts[0]) != "bearer" {
-			utils.ErrorResponse(c, http.StatusUnauthorized, "Invalid Authorization header format", nil, nil)
+			utils.ErrorResponse(c, http.StatusUnauthorized, "Invalid Authorization header format", errors.New("invalid Authorization header format"), nil)
 			c.Abort()
 			return
 		}
