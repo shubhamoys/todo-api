@@ -20,7 +20,8 @@ func UserRoutes(router *gin.Engine) {
 	// Protected routes
 	userGroup.Use(middleware.AuthMiddleware())
 	userGroup.Use(middleware.RoleBasedAccess())
-	userGroup.GET("/get-users", usersController.GetUsers)
+	userGroup.GET("/", usersController.GetUsers)
+	userGroup.PUT("/:id", usersController.UpdateUser)
 }
 
 func TaskRoutes(router *gin.Engine) {

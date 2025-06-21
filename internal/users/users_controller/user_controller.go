@@ -9,11 +9,13 @@ import (
 	"github.com/shubhamoys/todo-api/internal/users/dtos/get_users_dto"
 	"github.com/shubhamoys/todo-api/internal/users/dtos/login_user_dto"
 	"github.com/shubhamoys/todo-api/internal/users/dtos/register_user_dto"
+	"github.com/shubhamoys/todo-api/internal/users/dtos/update_user_dto"
 	"github.com/shubhamoys/todo-api/internal/users/models"
 	"github.com/shubhamoys/todo-api/internal/users/user_inputs"
 	"github.com/shubhamoys/todo-api/internal/users/users_service"
 	"github.com/shubhamoys/todo-api/pkg/auth"
 	"github.com/shubhamoys/todo-api/utils"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // UserController handles user-related operations
@@ -206,4 +208,97 @@ func (uc *UserController) GetUsers(c *gin.Context) {
 	utils.Logger.Info("Users fetched successfully")
 
 	utils.SuccessResponse(c, http.StatusOK, "Users fetched successfully", foundUsers)
+}
+
+func (tc *UserController) UpdateUser(c *gin.Context) {
+	// Get user role and Id from context set by RoleBasedAccess middleware
+	userRole, _ := c.Get("userRole")
+	userId, _ := c.Get("userId")
+
+	// Get userId from URL parameter
+	paramUserId := c.Param("id")
+	if userId == "" {
+		utils.Logger.Warn("User ID is required")
+
+		formattedMessage := constants.FormatErrorMessage(
+			constants.ErrorConstants.MissingField.Message.User,
+			map[string]string{"field": "User ID"},
+		)
+		utils.ErrorResponse(c, http.StatusBadRequest, "User ID is required", errors.New(formattedMessage), nil)
+		return
+	}
+
+	// Validate if paramUserId is a valid MongoDB ObjectID
+	userObjId, err := primitive.ObjectIDFromHex(paramUserId)
+	if err != nil {
+		utils.Logger.Warn("Invalid user ID format:", paramUserId)
+
+		formattedMessage := constants.FormatErrorMessage(
+			constants.ErrorConstants.InvalidField.Message.User,
+			map[string]string{"field": "User ID"},
+		)
+		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid user ID format", errors.New(formattedMessage), nil)
+		return
+	}
+
+	// Additional validation: Check if normal users can only update their own profile
+	if userRole == constants.UserRoles.User {
+		if userIdStr, ok := userId.(string); ok && userIdStr != paramUserId {
+			utils.Logger.Warn("Unauthorized access to update user:", userId)
+
+			formattedMessage := constants.FormatErrorMessage(
+				constants.ErrorConstants.Unauthorized.Message.User,
+				map[string]string{"resource": "user"},
+			)
+			utils.ErrorResponse(c, http.StatusForbidden, "Unauthorized access", errors.New(formattedMessage), nil)
+			return
+		}
+	}
+
+	// Step 1: Bind and validate request body
+	var updateUserDTO update_user_dto.UpdateUserDTO
+	utils.Logger.Info("Updating User started for user:", userId)
+
+	if err := c.ShouldBindJSON(&updateUserDTO); err != nil {
+		utils.Logger.Warn("Invalid request payload:", err)
+
+		formattedMessage := constants.FormatErrorMessage(
+			constants.ErrorConstants.InvalidInput.Message.User,
+			map[string]string{"message": err.Error()},
+		)
+		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid request payload", errors.New(formattedMessage), nil)
+		return
+	}
+
+	// Set 2: Validate struct fields
+	if err := updateUserDTO.Validate(); err != nil {
+		utils.Logger.Warn("Validation failed :", err)
+
+		formattedMessage := constants.FormatErrorMessage(
+			constants.ErrorConstants.ValidationError.Message.User,
+			map[string]string{"message": err.Error()},
+		)
+		utils.ErrorResponse(c, http.StatusBadRequest, "Validation failed", errors.New(formattedMessage), nil)
+		return
+	}
+
+	updateUserInput := user_inputs.UpdateUserInput{
+		Id: userObjId,
+		// UserId:      userObjId,
+		Name: updateUserDTO.Name,
+	}
+
+	// Step 3: Pass the validated DTO to the service layer
+	user, statusCode, err := tc.UserService.UpdateUser(updateUserInput)
+	if err != nil {
+		utils.Logger.Error("Error occurred while updating user:", userId, "error:", err)
+
+		utils.ErrorResponse(c, statusCode, "User update failed", err, nil)
+		return
+	}
+
+	// Step 4: Return response to the client
+	utils.Logger.Info("User update successful:", user.Name)
+
+	utils.SuccessResponse(c, statusCode, "User updated successfully", user)
 }

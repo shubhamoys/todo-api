@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/shubhamoys/todo-api/constants"
 	"github.com/shubhamoys/todo-api/db"
@@ -17,6 +18,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // UserService handles user-related operations
@@ -212,4 +214,57 @@ func (s *UsersService) RegisterUser(createUserInput user_inputs.CreateUserInput)
 	utils.Logger.Info("User registered successfully :", newUser.Email.Value)
 
 	return newUser, http.StatusCreated, nil
+}
+
+func (s *UsersService) UpdateUser(updateUserInput user_inputs.UpdateUserInput) (*models.User, int, error) {
+	utils.Logger.Info("Updating user:", updateUserInput.Id.Hex())
+
+	// Build update document
+	update := bson.M{
+		"$set": bson.M{
+			"updatedAt": time.Now(),
+		},
+	}
+
+	// Only add fields that are provided
+	if updateUserInput.Name != "" {
+		update["$set"].(bson.M)["name"] = updateUserInput.Name
+	}
+	// if updateUserInput.Description != "" {
+	// 	update["$set"].(bson.M)["description"] = updateUserInput.Description
+	// }
+	// if updateUserInput.Status != "" {
+	// 	update["$set"].(bson.M)["status"] = updateUserInput.Status
+	// }
+
+	// Find and update the user
+	var updatedUser models.User
+	err := s.collection.FindOneAndUpdate(
+		context.TODO(),
+		bson.M{"_id": updateUserInput.Id},
+		update,
+		options.FindOneAndUpdate().SetReturnDocument(options.After),
+	).Decode(&updatedUser)
+
+	// Handle errors
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			utils.Logger.Warn("User not found:", updateUserInput.Id.Hex())
+			formattedMessage := constants.FormatErrorMessage(
+				constants.ErrorConstants.EntityNotFound.Message.User,
+				map[string]string{"entity": "User"},
+			)
+			return nil, http.StatusNotFound, errors.New(formattedMessage)
+		}
+
+		utils.Logger.Error("Database error while updating user:", err)
+		formattedMessage := constants.FormatErrorMessage(
+			constants.ErrorConstants.DatabaseError.Message.User,
+			map[string]string{"message": err.Error()},
+		)
+		return nil, http.StatusInternalServerError, errors.New(formattedMessage)
+	}
+
+	utils.Logger.Info("User updated successfully:", updatedUser.Id.Hex())
+	return &updatedUser, http.StatusOK, nil
 }
